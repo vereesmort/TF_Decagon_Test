@@ -1,0 +1,67 @@
+# Best selfloops SimplE from analysis/experiments/best_traces.csv
+# (job_id e9b0e007, child_folder 21, valid MRR 0.174)
+# Paper Table 2 headline: median AUROC 0.978 / AUPRC 0.971 / AP@50 1.000
+#
+# kge start analysis/experiments/config_templates/selfloops_best.yaml
+
+job.type: train
+job.auto_correct: true
+dataset.name: selfloops
+import: [simple]
+model: simple
+
+train:
+  type: 1vsAll
+  batch_size: 256
+  loss: kl
+  optimizer:
+    default:
+      type: Adam
+      args:
+        lr: 0.0107609491076982
+  lr_scheduler: ReduceLROnPlateau
+  lr_scheduler_args:
+    mode: max
+    factor: 0.5
+    threshold: 0.0001
+    patience: 6
+  max_epochs: 500
+  subbatch_auto_tune: true
+
+lookup_embedder:
+  dim: 256
+  initialize: xavier_normal_
+  initialize_args:
+    xavier_normal_:
+      gain: 1.0
+  regularize: ''
+  regularize_args:
+    weighted: true
+    p: 2
+
+simple:
+  entity_embedder:
+    regularize_weight: 9.084280252352796e-05
+    dropout: 0.0679910727776587
+  relation_embedder:
+    regularize_weight: 2.517173786064683e-07
+    dropout: 0.1253491407260298
+
+eval:
+  batch_size: 256
+
+entity_ranking:
+  filter_with_test: true
+  metrics_per:
+    relation_type: true
+
+negative_sampling.implementation: batch
+
+valid:
+  every: 5
+  metric: mean_reciprocal_rank_filtered_with_test
+  early_stopping:
+    patience: 10
+    threshold:
+      epochs: 50
+      metric_value: 0.1

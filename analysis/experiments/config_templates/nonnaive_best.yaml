@@ -1,0 +1,72 @@
+# Best non-naive SimplE from analysis/experiments/best_traces.csv
+# (job_id 3651567c, child_folder 84, valid MRR 0.140)
+# Fixed train job — no Ax search. Keys updated for current LibKGE.
+#
+# Before running:
+# 1. Patch LibKGE lookup_embedder.py with this repo's pretrained hook
+# 2. Build the dataset into LibKGE:
+#      python data/graphs/make_libkge_datasets.py /Users/kcah/Documents/github-repo/kge/data
+# 3. Confirm user.pretrained_path points at feature_vectors/
+#
+# kge start analysis/experiments/config_templates/nonnaive_best.yaml
+
+job.type: train
+job.auto_correct: true
+dataset.name: non-naive
+import: [simple]
+model: simple
+
+train:
+  type: KvsAll
+  batch_size: 128
+  loss: bce
+  optimizer:
+    default:
+      type: Adamax
+      args:
+        lr: 0.0254052833496968
+  lr_scheduler: ReduceLROnPlateau
+  lr_scheduler_args:
+    mode: max
+    factor: 0.5
+    threshold: 0.0001
+    patience: 5
+  max_epochs: 500
+  subbatch_auto_tune: true
+
+lookup_embedder:
+  dim: 128
+  regularize: lp
+  regularize_args:
+    weighted: true
+    p: 2
+
+simple:
+  entity_embedder:
+    regularize_weight: 1.6474249100926332e-19
+    dropout: 0.2708148565143347
+  relation_embedder:
+    regularize_weight: 3.691742227537547e-18
+    dropout: 0.0556018855422735
+
+eval:
+  batch_size: 256
+
+entity_ranking:
+  filter_with_test: true
+  metrics_per:
+    relation_type: true
+
+negative_sampling.implementation: batch
+
+valid:
+  every: 5
+  metric: mean_reciprocal_rank_filtered_with_test
+  early_stopping:
+    patience: 10
+    threshold:
+      epochs: 50
+      metric_value: 0.1
+
+user:
+  pretrained_path: /Users/kcah/Documents/github-repo/TF_Decagon_Static/data/graphs/non-naive/feature_vectors
