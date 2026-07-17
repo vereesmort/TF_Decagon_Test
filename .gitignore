@@ -9,6 +9,9 @@ analysis/assessment/testing
 data/figures/testing.ipynb
 analysis/false_start/checkpoints
 **/*.tar.gz
-analysis/experiments/non-naive
-analysis/experiments/selfloops
+# analysis/experiments/non-naive
+# analysis/experiments/selfloops
 **/*.pt
+docs/
+eda/
+supplementary_simple_selfloops/
