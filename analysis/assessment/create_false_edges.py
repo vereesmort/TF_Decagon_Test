@@ -44,12 +44,16 @@ if __name__ == '__main__':
 
     full_edgelist = pd.DataFrame()
     for split in ['train', 'test', 'valid']:
-        full_edgelist = full_edgelist.append(
-            pd.read_csv(
-                f'{args.libkge_data_dir}/{split}.del',
-                sep='\t',
-                header=None
-            )
+        full_edgelist = pd.concat(
+            [
+                full_edgelist,
+                pd.read_csv(
+                    f'{args.libkge_data_dir}/{split}.del',
+                    sep='\t',
+                    header=None,
+                ),
+            ],
+            ignore_index=True,
         )
 
     holdout = pd.read_csv(

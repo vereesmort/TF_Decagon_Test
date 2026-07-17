@@ -23,8 +23,8 @@ while not done:
     for edge_type, subdf in edges.groupby(1):
         if edge_type in poly_edges:
             train_edges, test_edges = train_test_split(subdf, test_size=0.1)
-            train_df = train_df.append(train_edges)
-            holdout_df = holdout_df.append(test_edges)
+            train_df = pd.concat([train_df, train_edges], ignore_index=True)
+            holdout_df = pd.concat([holdout_df, test_edges], ignore_index=True)
 
     holdout_nodes = set()
     train_nodes = set()

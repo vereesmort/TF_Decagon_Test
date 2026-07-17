@@ -7,7 +7,7 @@ out_edges = pd.DataFrame(columns=['head', 'relation', 'tail'])
 core = pd.read_csv('../../processed/core_network_ppi_drugtarget.tsv', header=None, sep='\t', dtype={0:str, 1:str, 2:str})
 core.columns = ['head', 'relation', 'tail']
 core.drop_duplicates(inplace=True)
-out_edges = out_edges.append(core)
+out_edges = pd.concat([out_edges, core], ignore_index=True)
 del core
 
 
@@ -15,7 +15,7 @@ del core
 polySE = pd.read_csv('../../processed/polypharmacy/train_polypharmacy.tsv', header=None, sep='\t')
 polySE.columns = ['head', 'relation', 'tail']
 polySE.drop_duplicates(inplace=True)
-out_edges = out_edges.append(polySE, ignore_index=True)
+out_edges = pd.concat([out_edges, polySE], ignore_index=True)
 del polySE
 
 # Save edges
