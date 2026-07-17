@@ -4,9 +4,11 @@
 #
 # Before running:
 # 1. Patch LibKGE lookup_embedder.py with this repo's pretrained hook
-# 2. Build the dataset into LibKGE:
+# 2. Generate drug init vectors (PCA/SVD of monopharmacy):
+#      uv run python data/processed/nonnaive_feature_vectors/generate_non_naive_feature_vectors.py
+# 3. Build the dataset into LibKGE:
 #      python data/graphs/make_libkge_datasets.py /Users/kcah/Documents/github-repo/kge/data
-# 3. Confirm user.pretrained_path points at feature_vectors/
+# 4. Confirm user.pretrained_path points at feature_vectors/
 #
 # kge start analysis/experiments/config_templates/nonnaive_best.yaml
 
