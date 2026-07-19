@@ -3,6 +3,7 @@ import numpy as np
 import torch
 import decagon_rank_metrics
 import argparse
+import os
 from os import listdir, system
 from kge.model import KgeModel
 from kge.util.io import load_checkpoint
@@ -27,8 +28,16 @@ if model_name == 'reciprocal_relations_model':
         'reciprocal_relations_model'
         )['base_model']['type']
 
-# Load entity and relation keys
-libkge_data_dir = checkpoint['config'].get('dataset.name')
+# Load entity and relation keys (dataset.name is often a short name like
+# "non-naive"; model.dataset.folder is the resolved absolute LibKGE data path)
+libkge_data_dir = model.dataset.folder
+if not libkge_data_dir or not os.path.isfile(
+    os.path.join(libkge_data_dir, "relation_ids.del")
+):
+    raise FileNotFoundError(
+        f"Could not find relation_ids.del under dataset folder {libkge_data_dir!r}. "
+        "Check that the checkpoint's dataset exists in your LibKGE data/ directory."
+    )
 relation_ids = pd.read_csv(
     f'{libkge_data_dir}/relation_ids.del',
     sep='\t',
@@ -49,17 +58,37 @@ holdout = pd.read_csv(
 )
 
 # Convert holdout names to IDs
+entity_name_to_id = {entity_ids[key]: key for key in entity_ids}
+relation_name_to_id = {relation_ids[key]: key for key in relation_ids}
 if all(holdout.dtypes == object):
-    entity_name_to_id = {entity_ids[key]: key for key in entity_ids}
     holdout[0] = [entity_name_to_id[name] for name in holdout[0]]
     holdout[2] = [entity_name_to_id[name] for name in holdout[2]]
-
-    relation_name_to_id = {relation_ids[key]: key for key in relation_ids}
     holdout[1] = [relation_name_to_id[name] for name in holdout[1]]
 elif any(holdout.dtypes == object):
     raise ValueError(
         'Appears that there is a mix of IDs and strings in holdout data.'
     )
+
+
+def load_negative_edges(path, entity_name_to_id, relation_name_to_id):
+    """Load false_edges TSV as integer (s, p, o) IDs.
+
+    ``create_false_edges.py`` writes LibKGE integer IDs. Older/string dumps
+    with CID/CUI names are mapped via the ID dictionaries.
+    """
+    raw = pd.read_csv(path, header=None, sep='\t')
+    sample = raw.iloc[0, 0]
+    if isinstance(sample, str) and not str(sample).isdigit():
+        return [
+            [
+                entity_name_to_id[edge[0]],
+                relation_name_to_id[edge[1]],
+                entity_name_to_id[edge[2]],
+            ]
+            for edge in raw.to_numpy().tolist()
+        ]
+    return raw.astype(int).to_numpy().tolist()
+
 
 # Create out df
 if args.partial_results:
@@ -78,19 +107,11 @@ for rel_id, subdf in holdout.groupby(1):
         # Get assessment data
         positive_edges = subdf.to_numpy().tolist()
         false_edge_file = f'{relation}.tsv'
-        negative_edges_str = pd.read_csv(
+        negative_edges = load_negative_edges(
             f'false_edges/{false_edge_file}',
-            header=None,
-            sep='\t'
-        ).to_numpy().tolist()
-        negative_edges = [
-            [
-                entity_name_to_id[edge[0]],
-                relation_name_to_id[edge[1]],
-                entity_name_to_id[edge[2]]
-            ]
-            for edge in negative_edges_str
-        ]
+            entity_name_to_id,
+            relation_name_to_id,
+        )
 
         edges_to_score = positive_edges + negative_edges
         s = torch.Tensor([edge[0] for edge in edges_to_score])
