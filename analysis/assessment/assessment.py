@@ -132,14 +132,14 @@ for rel_id, subdf in holdout.groupby(1):
         roc = roc_auc_score(labels, preds)
         prc = average_precision_score(labels, preds)
 
-        # Calculate average precision at 50 using Decagon's function
+        # Calculate average precision at 50 using Decagon's function.
+        # Pass Python tuples (not a NumPy object array): apk uses `p in …`,
+        # which breaks on ndarray membership / empty-slice broadcasting.
         edges_ranked = pd.DataFrame(zip(preds, edges_to_score))
         edges_ranked.sort_values(0, ascending=False, inplace=True)
-        ap50 = decagon_rank_metrics.apk(
-            positive_edges,
-            edges_ranked[1].values,
-            k=50
-        )
+        ranked_edges = [tuple(edge) for edge in edges_ranked[1].tolist()]
+        actual_edges = [tuple(edge) for edge in positive_edges]
+        ap50 = decagon_rank_metrics.apk(actual_edges, ranked_edges, k=50)
 
         # Store metrics for target relation
         results.loc[len(results)] = ([relation, roc, prc, ap50])
